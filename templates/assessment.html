@@ -68,10 +68,7 @@
     <div class="col-md-10 col-lg-8">
         <!-- Avatar Display -->
         <div id="avatar-container" class="text-center mb-4">
-            <video id="avatar" width="100" style="display: none;" autoplay muted loop>
-                <source src="{{ url_for('static', filename='../images/avatar.webm') }}" type="video/webm">
-                Your browser does not support the video tag.
-            </video>
+            <video id="avatar" src="{{ url_for('static', filename='images/avatar.webm') }}" alt="AI Assistant" style="width: 100px; display: none;">
         </div>
 
         <!-- Progress Indicator -->
