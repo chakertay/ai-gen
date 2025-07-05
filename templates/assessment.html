@@ -15,6 +15,25 @@
         100% { opacity: 0.5; }
     }
     
+    @keyframes talk {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+
+    @keyframes listen {
+        0% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    #avatar.talking {
+        animation: talk 1s infinite;
+    }
+
+    #avatar.listening {
+        animation: listen 2s infinite ease-in-out;
+    }
+
     .audio-controls {
         max-width: 400px;
         margin: 0 auto;
@@ -47,6 +66,11 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-10 col-lg-8">
+        <!-- Avatar Display -->
+        <div id="avatar-container" class="text-center mb-4">
+            <video id="avatar" src="{{ url_for('static', filename='images/avatar.webm') }}" alt="AI Assistant" style="width: 100px; display: none;">
+        </div>
+
         <!-- Progress Indicator -->
         <div class="card mb-4">
             <div class="card-body">
