@@ -122,7 +122,7 @@ def generate_followup_question(cv_analysis: dict, previous_qa: list) -> str:
             return "Quels défis avez-vous rencontrés dans votre carrière, et comment les avez-vous surmontés ?"
 
         # Prepare context from previous Q&A
-        qa_context = "\n".join([f"Q : {qa['question']}\nR : {qa['answer']}" for qa in previous_qa[-3:]])  # Dernières 3 Q&R
+        qa_context = "\n".join([f"Q : {qa['question']}\nR : {qa['answer']}" for qa in previous_qa[len(previous_qa)-1]])  # Dernières 3 Q&R
 
         prompt = f"""
         Vous menez un entretien d'évaluation professionnelle. En vous basant sur l’analyse du CV et les échanges précédents, 
@@ -169,24 +169,26 @@ def generate_final_summary(cv_analysis: dict, qa_pairs: list) -> str:
 
         qa_text = "\n".join([f"Q : {qa['question']}\nR : {qa['answer']}" for qa in qa_pairs])
 
-        prompt = f"""
-        Rédigez un résumé complet d’évaluation professionnelle basé sur l’analyse du CV et les réponses à l’entretien.
+        prompt = f"""En tant que consultant professionnel en carrière, créez un rapport d'évaluation complet basé sur les éléments suivants :
 
-        Analyse du CV :
+        Analyse initiale du CV :
         {json.dumps(cv_analysis, indent=2)}
 
         Questions & Réponses de l’entretien :
         {qa_text}
 
-        Fournissez un résumé détaillé incluant :
-        1. Aperçu du profil professionnel
-        2. Forces et compétences clés
-        3. Informations sur le développement de carrière
-        4. Domaines de développement recommandés
-        5. Prochaines étapes suggérées
+        Générez un rapport d'évaluation professionnel détaillé au format JSON avec la structure suivante :
+        {{
+            "resume_executif": "Vue d'ensemble du profil du candidat et points clés",
+            "forces": ["Liste des forces identifiées"],
+            "points_a_améliorer": ["Liste des domaines à améliorer"],
+            "recommandations_de_carriere": ["Recommandations spécifiques pour le développement professionnel"],
+            "lacunes_de_competences": ["Compétences manquantes identifiées"],
+            "prochaines_etapes": ["Actions concrètes pour le développement professionnel"],
+            "evaluation_globale": "Évaluation globale du profil professionnel et note potentielle"
+        }}
 
-        Rendez-le concret et exploitable afin de guider efficacement leur développement professionnel.
-        """
+        Basez le rapport sur les réponses fournies et le contenu du CV. Soyez précis et donnez des recommandations actionnables."""
 
         response = client.models.generate_content(
             model="gemini-2.5-pro",
@@ -198,3 +200,4 @@ def generate_final_summary(cv_analysis: dict, qa_pairs: list) -> str:
     except Exception as e:
         logging.error(f"Erreur lors de la génération du résumé final : {str(e)}")
         return "Erreur lors de la génération du résumé de l’évaluation. Veuillez réessayer."
+
