@@ -121,39 +121,46 @@ def generate_followup_question(cv_analysis: dict, previous_qa: list) -> str:
         if not client:
             return "Quels défis avez-vous rencontrés dans votre carrière, et comment les avez-vous surmontés ?"
 
-        # Prepare context from previous Q&A
-        qa_context = "\n".join([f"Q : {qa['question']}\nR : {qa['answer']}" for qa in previous_qa[len(previous_qa)-1]])  # Dernières 3 Q&R
+        # Prepare context from previous Q&A - take last 3 Q&A pairs
+        recent_qa = previous_qa[-3:] if len(previous_qa) > 3 else previous_qa
+        qa_context = "\n".join([f"Q : {qa['question']}\nR : {qa['answer']}" for qa in recent_qa])
 
-        prompt = f"""
-        Vous menez un entretien d'évaluation professionnelle. En vous basant sur l’analyse du CV et les échanges précédents, 
-        générez la prochaine question pertinente.
+        prompt = f"""Vous menez un entretien d'évaluation professionnelle. En vous basant sur l'analyse du CV et les échanges précédents, générez la prochaine question pertinente.
 
-        Analyse du CV :
-        Résumé : {cv_analysis.get('summary', '')}
-        Stade de carrière : {cv_analysis.get('career_stage', '')}
-        Compétences clés : {', '.join(cv_analysis.get('key_skills', []))}
-        Axes d'amélioration : {', '.join(cv_analysis.get('potential_areas_for_growth', []))}
+Analyse du CV :
+Résumé : {cv_analysis.get('summary', '')}
+Stade de carrière : {cv_analysis.get('career_stage', '')}
+Compétences clés : {', '.join(cv_analysis.get('key_skills', []))}
+Axes d'amélioration : {', '.join(cv_analysis.get('potential_areas_for_growth', []))}
 
-        Conversation précédente :
-        {qa_context}
+Conversation précédente :
+{qa_context}
 
-        Générez une question de suivi qui :
-        1. S’appuie sur leurs réponses précédentes
-        2. Explore d'autres aspects de leur développement professionnel
-        3. Peut aborder : développement des compétences, défis rencontrés, expériences de leadership, 
-           transitions de carrière, préférences d’apprentissage, environnement de travail ou aspirations futures
-        4. Maintient une tonalité conversationnelle et bienveillante
-        5. Encourage des exemples concrets et une réflexion approfondie
+Générez une question de suivi qui :
+1. S'appuie sur leurs réponses précédentes
+2. Explore d'autres aspects de leur développement professionnel
+3. Peut aborder : développement des compétences, défis rencontrés, expériences de leadership, transitions de carrière, préférences d'apprentissage, environnement de travail ou aspirations futures
+4. Maintient une tonalité conversationnelle et bienveillante
+5. Encourage des exemples concrets et une réflexion approfondie
 
-        Retournez uniquement le texte de la question, sans mise en forme supplémentaire.
-        """
+Retournez uniquement le texte de la question, sans mise en forme supplémentaire."""
 
         response = client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=prompt
+            contents=[
+                types.Content(role="user", parts=[types.Part(text=prompt)])
+            ],
+            config=types.GenerateContentConfig(
+                system_instruction="Vous êtes un expert en entretiens professionnels. Générez une question claire et engageante.",
+                temperature=0.7,
+                max_output_tokens=200
+            )
         )
 
-        return response.text.strip() if response.text else "Quelles compétences ou domaines souhaitez-vous développer davantage dans votre carrière ?"
+        if response.text and response.text.strip():
+            return response.text.strip()
+        else:
+            raise ValueError("Réponse vide de Gemini")
 
     except Exception as e:
         logging.error(f"Erreur lors de la génération de la question de suivi : {str(e)}")
@@ -165,39 +172,46 @@ def generate_final_summary(cv_analysis: dict, qa_pairs: list) -> str:
     """
     try:
         if not client:
-            return "Évaluation professionnelle terminée. Configuration de l’API requise pour un résumé détaillé généré par l’IA."
+            return "Évaluation professionnelle terminée. Configuration de l'API requise pour un résumé détaillé généré par l'IA."
 
         qa_text = "\n".join([f"Q : {qa['question']}\nR : {qa['answer']}" for qa in qa_pairs])
 
         prompt = f"""En tant que consultant professionnel en carrière, créez un rapport d'évaluation complet basé sur les éléments suivants :
 
-        Analyse initiale du CV :
-        {json.dumps(cv_analysis, indent=2)}
+Analyse initiale du CV :
+{json.dumps(cv_analysis, indent=2, ensure_ascii=False)}
 
-        Questions & Réponses de l’entretien :
-        {qa_text}
+Questions & Réponses de l'entretien :
+{qa_text}
 
-        Générez un rapport d'évaluation professionnel détaillé au format JSON avec la structure suivante :
-        {{
-            "resume_executif": "Vue d'ensemble du profil du candidat et points clés",
-            "forces": ["Liste des forces identifiées"],
-            "points_a_améliorer": ["Liste des domaines à améliorer"],
-            "recommandations_de_carriere": ["Recommandations spécifiques pour le développement professionnel"],
-            "lacunes_de_competences": ["Compétences manquantes identifiées"],
-            "prochaines_etapes": ["Actions concrètes pour le développement professionnel"],
-            "evaluation_globale": "Évaluation globale du profil professionnel et note potentielle"
-        }}
+Créez un rapport d'évaluation professionnel détaillé qui inclut :
+1. Résumé exécutif du profil du candidat
+2. Forces identifiées
+3. Points à améliorer 
+4. Recommandations pour le développement professionnel
+5. Compétences à développer
+6. Prochaines étapes concrètes
+7. Évaluation globale
 
-        Basez le rapport sur les réponses fournies et le contenu du CV. Soyez précis et donnez des recommandations actionnables."""
+Basez le rapport sur les réponses fournies et le contenu du CV. Soyez précis et donnez des recommandations actionnables. Rédigez en français et de manière professionnelle."""
 
         response = client.models.generate_content(
             model="gemini-2.5-pro",
-            contents=prompt
+            contents=[
+                types.Content(role="user", parts=[types.Part(text=prompt)])
+            ],
+            config=types.GenerateContentConfig(
+                system_instruction="Vous êtes un consultant expert en développement professionnel. Créez un rapport d'évaluation complet et structuré.",
+                temperature=0.3,
+                max_output_tokens=2000
+            )
         )
 
-        return response.text if response.text else "Le résumé de l’évaluation n’a pas pu être généré."
+        if response.text and response.text.strip():
+            return response.text.strip()
+        else:
+            raise ValueError("Réponse vide de Gemini")
 
     except Exception as e:
         logging.error(f"Erreur lors de la génération du résumé final : {str(e)}")
-        return "Erreur lors de la génération du résumé de l’évaluation. Veuillez réessayer."
-
+        return "Erreur lors de la génération du résumé de l'évaluation. Veuillez réessayer."

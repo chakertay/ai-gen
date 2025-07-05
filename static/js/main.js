@@ -8,8 +8,18 @@ let recognizedText = '';
 const avatar = document.getElementById('avatar');
 
 function setAvatarState(state) {
+    if (!avatar) return;
     avatar.classList.remove('talking', 'listening');
-    if (state) avatar.classList.add(state);
+    if (state) {
+        avatar.classList.add(state);
+        if (state === 'talking' || state === 'listening') {
+            avatar.style.display = 'block';
+            avatar.play().catch(e => console.log('Video autoplay prevented:', e));
+        }
+    } else {
+        avatar.pause();
+        avatar.style.display = 'none';
+    }
 }
 
 function startVoiceRecognition() {

@@ -206,9 +206,13 @@ def generate_report():
             }
         qa_pairs = assessment_session.get_questions_answers()
         
-        # Generate final summary - use fallback to avoid API issues
-        logging.info("Generating final summary using fallback approach")
-        final_summary = f"""Résumé de l'Évaluation Professionnelle
+        # Generate final summary using Gemini API
+        logging.info("Generating final summary using Gemini API")
+        try:
+            final_summary = generate_final_summary(cv_analysis, qa_pairs)
+        except Exception as summary_error:
+            logging.warning(f"Error generating summary with API, using fallback: {str(summary_error)}")
+            final_summary = f"""Résumé de l'Évaluation Professionnelle
 
 Cette évaluation complète a été réalisée avec {len(qa_pairs)} questions d'entretien basées sur l'analyse du CV du candidat.
 
