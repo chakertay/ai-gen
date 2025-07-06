@@ -120,3 +120,42 @@ def report():
         logging.error(f"Error in report: {str(e)}")
         flash('An error occurred while loading the report. Please try again.', 'error')
         return redirect(url_for('main.index'))
+
+@main_bp.route('/new_assessment')
+def new_assessment():
+    """Start a new assessment - clear session and redirect to home"""
+    try:
+        # Clear the current session
+        session.pop('assessment_session_id', None)
+        flash('Ready to start a new assessment. Please upload your CV.', 'info')
+        return redirect(url_for('main.index'))
+    except Exception as e:
+        logging.error(f"Error in new_assessment: {str(e)}")
+        flash('An error occurred. Please try again.', 'error')
+        return redirect(url_for('main.index'))
+
+@main_bp.route('/download_report/<session_id>')
+def download_report(session_id):
+    """Download assessment report"""
+    try:
+        from app import app
+        # Find the report file
+        report_filename = None
+        reports_dir = app.config['REPORTS_FOLDER']
+        
+        for filename in os.listdir(reports_dir):
+            if filename.startswith(f'assessment_report_{session_id}'):
+                report_filename = filename
+                break
+        
+        if not report_filename:
+            flash('Report not found. Please generate the report first.', 'error')
+            return redirect(url_for('main.report'))
+        
+        report_path = os.path.join(reports_dir, report_filename)
+        return send_file(report_path, as_attachment=True, download_name=f'assessment_report_{session_id}.pdf')
+        
+    except Exception as e:
+        logging.error(f"Error in download_report: {str(e)}")
+        flash('Error downloading report. Please try again.', 'error')
+        return redirect(url_for('main.report'))
