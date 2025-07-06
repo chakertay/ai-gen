@@ -121,9 +121,9 @@ def generate_followup_question(cv_analysis: dict, previous_qa: list) -> str:
         if not client:
             return "Quels défis avez-vous rencontrés dans votre carrière, et comment les avez-vous surmontés ?"
 
-        # Prepare context from previous Q&A - take last 3 Q&A pairs
-        recent_qa = previous_qa[-3:] if len(previous_qa) > 3 else previous_qa
-        qa_context = "\n".join([f"Q : {qa['question']}\nR : {qa['answer']}" for qa in recent_qa])
+        # Prepare context from previous Q&A - take last Q&A pairs
+        recent_qa = previous_qa[len(previous_qa)-1] 
+        qa_context = "\n".join(f"Q : {recent_qa['question']}\nR : {recent_qa['answer']}")
 
         prompt = f"""Vous menez un entretien d'évaluation professionnelle. En vous basant sur l'analyse du CV et les échanges précédents, générez la prochaine question pertinente.
 
