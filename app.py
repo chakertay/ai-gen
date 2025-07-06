@@ -42,21 +42,10 @@ with app.app_context():
     import models
     from routes.main_routes import main_bp
     from routes.api_routes import api_bp
-    
+
     # Register blueprints
     app.register_blueprint(main_bp)
     app.register_blueprint(api_bp, url_prefix='/api')
-    
-    # Create all tables with explicit creation
-    try:
-        db.create_all()
-        logging.info("Database tables created successfully")
-    except Exception as e:
-        logging.error(f"Error creating database tables: {str(e)}")
-        
-    # Test database connection
-    try:
-        result = db.session.execute(db.text("SELECT 1"))
-        logging.info("Database connection test successful")
-    except Exception as e:
-        logging.error(f"Database connection test failed: {str(e)}")
+
+    # Create all tables
+    db.create_all()

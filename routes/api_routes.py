@@ -12,28 +12,6 @@ from services.document_service import generate_assessment_report, create_report_
 
 api_bp = Blueprint('api', __name__)
 
-@api_bp.route('/test-db', methods=['GET'])
-def test_db():
-    """Test database connectivity and data retrieval"""
-    try:
-        # Test basic database connection
-        db.session.execute(db.text("SELECT 1"))
-
-        # Test table existence
-        sessions = AssessmentSession.query.all()
-
-        return jsonify({
-            'status': 'success',
-            'message': 'Database connection successful',
-            'total_sessions': len(sessions),
-            'sessions': [{'id': s.id, 'session_id': s.session_id, 'status': s.status} for s in sessions]
-        })
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': f'Database error: {str(e)}'
-        }), 500
-
 @api_bp.route('/analyze_cv', methods=['POST'])
 def analyze_cv():
     """Analyze CV content and generate first question"""
@@ -121,8 +99,6 @@ def serve_audio(filename):
     except Exception as e:
         logging.error(f"Error serving audio: {str(e)}")
         return jsonify({'error': 'Failed to serve audio'}), 500
-
-# Transcribe audio route removed - using browser-based speech recognition instead
 
 @api_bp.route('/submit_answer', methods=['POST'])
 def submit_answer():
@@ -270,6 +246,12 @@ Le candidat a bien performé lors de cette évaluation vocale, fournissant des r
         else:
             logging.error("Failed to generate PDF report")
             return jsonify({'error': 'Failed to generate report'}), 500
+
+    except Exception as e:
+        logging.error(f"Error in generate_report: {str(e)}")
+        import traceback
+        logging.error(f"Full traceback: {traceback.format_exc()}")
+        return jsonify({'error': 'Report generation failed'}), 500
 
 @api_bp.route('/debug_session')
 def debug_session():
