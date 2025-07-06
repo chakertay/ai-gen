@@ -271,6 +271,10 @@ Le candidat a bien performé lors de cette évaluation vocale, fournissant des r
             logging.error("Failed to generate PDF report")
             return jsonify({'error': 'Failed to generate report'}), 500
 
+    except Exception as e:
+        logging.error(f"Error in generate_report: {str(e)}")
+        return jsonify({'error': 'Failed to generate report'}), 500
+
 @api_bp.route('/debug_session')
 def debug_session():
     """Debug endpoint to check session status"""
