@@ -146,9 +146,9 @@ async function startRecording() {
                 const displayText = result.final + (result.interim ? ' ' + result.interim : '');
                 document.getElementById('transcribed-text').textContent = displayText;
 
-                if (displayText.trim()) {
-                    document.getElementById('answer-section').style.display = 'block';
-                }
+ //               if (displayText.trim()) {
+  //                  document.getElementById('answer-section').style.display = //'block';
+ //               }
 
                 if (result.isFinal && result.final.trim()) {
                     recognizedText = result.final;

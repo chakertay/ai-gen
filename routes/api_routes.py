@@ -12,6 +12,7 @@ from services.document_service import generate_assessment_report, create_report_
 
 api_bp = Blueprint('api', __name__)
 
+
 @api_bp.route('/analyze_cv', methods=['POST'])
 def analyze_cv():
     """Analyze CV content and generate first question"""
@@ -20,7 +21,8 @@ def analyze_cv():
         if not session_id:
             return jsonify({'error': 'No active session'}), 400
 
-        assessment_session = AssessmentSession.query.filter_by(session_id=session_id).first()
+        assessment_session = AssessmentSession.query.filter_by(
+            session_id=session_id).first()
         if not assessment_session:
             return jsonify({'error': 'Session not found'}), 404
 
@@ -34,12 +36,18 @@ def analyze_cv():
             logging.warning(f"API error, using fallback: {str(api_error)}")
             # Fallback analysis when Gemini API is not available
             cv_analysis = {
-                'summary': 'Professional with diverse experience and skills',
-                'key_skills': ['Communication', 'Problem Solving', 'Teamwork', 'Leadership'],
-                'experience_years': 5,
-                'career_stage': 'Mid-level Professional',
-                'notable_achievements': ['Professional development', 'Project completion'],
-                'potential_areas_for_growth': ['Technical skills', 'Leadership development']
+                'summary':
+                'Professional with diverse experience and skills',
+                'key_skills':
+                ['Communication', 'Problem Solving', 'Teamwork', 'Leadership'],
+                'experience_years':
+                5,
+                'career_stage':
+                'Mid-level Professional',
+                'notable_achievements':
+                ['Professional development', 'Project completion'],
+                'potential_areas_for_growth':
+                ['Technical skills', 'Leadership development']
             }
             first_question = "I'd like to understand your career journey better. What are your current professional goals and what motivates you in your work?"
 
@@ -57,6 +65,7 @@ def analyze_cv():
     except Exception as e:
         logging.error(f"Error in analyze_cv: {str(e)}")
         return jsonify({'error': 'Failed to analyze CV'}), 500
+
 
 @api_bp.route('/generate_audio', methods=['POST'])
 def generate_audio():
@@ -87,6 +96,7 @@ def generate_audio():
         logging.error(f"Error in generate_audio: {str(e)}")
         return jsonify({'error': 'Audio generation failed'}), 500
 
+
 @api_bp.route('/audio/<filename>')
 def serve_audio(filename):
     """Serve audio files"""
@@ -100,6 +110,7 @@ def serve_audio(filename):
         logging.error(f"Error serving audio: {str(e)}")
         return jsonify({'error': 'Failed to serve audio'}), 500
 
+
 @api_bp.route('/submit_answer', methods=['POST'])
 def submit_answer():
     """Submit answer and get next question"""
@@ -108,7 +119,8 @@ def submit_answer():
         if not session_id:
             return jsonify({'error': 'No active session'}), 400
 
-        assessment_session = AssessmentSession.query.filter_by(session_id=session_id).first()
+        assessment_session = AssessmentSession.query.filter_by(
+            session_id=session_id).first()
         if not assessment_session:
             return jsonify({'error': 'Session not found'}), 404
 
@@ -125,9 +137,10 @@ def submit_answer():
 
         # Get current Q&A list
         qa_list = assessment_session.get_questions_answers()
+        logging.info(f"Current Q&A list: {qa_list}")
 
         # Check if we should continue with more questions (limit to 8 questions)
-        if len(qa_list) >= 8:
+        if len(qa_list) >= 2:
             assessment_session.status = 'completed'
             db.session.commit()
 
@@ -139,10 +152,16 @@ def submit_answer():
         else:
             # Generate next question
             try:
-                cv_analysis = json.loads(assessment_session.cv_analysis) if assessment_session.cv_analysis else {}
-                next_question = generate_followup_question(cv_analysis, qa_list)
+                print(type(assessment_session.cv_analysis))
+                cv_analysis = eval(assessment_session.cv_analysis
+                                   ) if assessment_session.cv_analysis else {}
+                logging.info(f"CV analysis: {cv_analysis}")
+                next_question = generate_followup_question(
+                    cv_analysis, qa_list)
             except Exception as api_error:
-                logging.warning(f"API error generating question, using fallback: {str(api_error)}")
+                logging.warning(
+                    f"API error generating question, using fallback: {str(api_error)}"
+                )
                 # Fallback questions when API is not available
                 fallback_questions = [
                     "Quels défis avez-vous rencontrés dans votre carrière, et comment les avez-vous surmontés ?",
@@ -170,17 +189,20 @@ def submit_answer():
         logging.error(f"Error in submit_answer: {str(e)}")
         return jsonify({'error': 'Failed to submit answer'}), 500
 
+
 @api_bp.route('/generate_report', methods=['POST'])
 def generate_report():
     """Generate final assessment report"""
     try:
+
         logging.info("Starting report generation process")
         session_id = session.get('assessment_session_id')
         if not session_id:
             logging.error("No active session found")
             return jsonify({'error': 'No active session'}), 400
 
-        assessment_session = AssessmentSession.query.filter_by(session_id=session_id).first()
+        assessment_session = AssessmentSession.query.filter_by(
+            session_id=session_id).first()
         if not assessment_session:
             logging.error(f"Session not found for ID: {session_id}")
             return jsonify({'error': 'Session not found'}), 404
@@ -191,8 +213,9 @@ def generate_report():
 
         # Get CV analysis and Q&A pairs
         try:
-            cv_analysis = json.loads(assessment_session.cv_analysis) if assessment_session.cv_analysis else {}
-        except:
+            cv_analysis = eval(assessment_session.cv_analysis
+                               ) if assessment_session.cv_analysis else {}
+        except Exception as e:
             # Fallback if JSON parsing fails
             cv_analysis = {
                 'summary': 'CV analysis completed',
@@ -209,7 +232,9 @@ def generate_report():
         try:
             final_summary = generate_final_summary(cv_analysis, qa_pairs)
         except Exception as summary_error:
-            logging.warning(f"Error generating summary with API, using fallback: {str(summary_error)}")
+            logging.warning(
+                f"Error generating summary with API, using fallback: {str(summary_error)}"
+            )
             final_summary = f"""Résumé de l'Évaluation Professionnelle
 
 Cette évaluation complète a été réalisée avec {len(qa_pairs)} questions d'entretien basées sur l'analyse du CV du candidat.
@@ -228,13 +253,15 @@ Le candidat a bien performé lors de cette évaluation vocale, fournissant des r
         # Generate PDF report
         logging.info("Generating PDF report")
         report_filename = create_report_filename(session_id)
-        report_path = os.path.join(app.config['REPORTS_FOLDER'], report_filename)
+        report_path = os.path.join(app.config['REPORTS_FOLDER'],
+                                   report_filename)
 
         # Ensure reports directory exists
         os.makedirs(app.config['REPORTS_FOLDER'], exist_ok=True)
         logging.info(f"Report will be saved to: {report_path}")
 
-        success = generate_assessment_report(cv_analysis, qa_pairs, final_summary, report_path)
+        success = generate_assessment_report(cv_analysis, qa_pairs,
+                                             final_summary, report_path)
 
         if success:
             logging.info("Report generated successfully")
@@ -253,23 +280,30 @@ Le candidat a bien performé lors de cette évaluation vocale, fournissant des r
         logging.error(f"Full traceback: {traceback.format_exc()}")
         return jsonify({'error': 'Report generation failed'}), 500
 
+
 @api_bp.route('/debug_session')
 def debug_session():
     """Debug endpoint to check session status"""
     session_id = session.get('assessment_session_id')
     if session_id:
-        assessment_session = AssessmentSession.query.filter_by(session_id=session_id).first()
+        assessment_session = AssessmentSession.query.filter_by(
+            session_id=session_id).first()
         if assessment_session:
             return jsonify({
-                'session_id': session_id,
-                'status': assessment_session.status,
-                'questions_count': len(assessment_session.get_questions_answers()),
-                'has_cv_analysis': bool(assessment_session.cv_analysis)
+                'session_id':
+                session_id,
+                'status':
+                assessment_session.status,
+                'questions_count':
+                len(assessment_session.get_questions_answers()),
+                'has_cv_analysis':
+                bool(assessment_session.cv_analysis)
             })
         else:
             return jsonify({'error': 'Session not found in database'})
     else:
         return jsonify({'error': 'No session ID in session'})
+
 
 @api_bp.route('/session_status')
 def session_status():
@@ -279,7 +313,8 @@ def session_status():
         if not session_id:
             return jsonify({'error': 'No active session'}), 400
 
-        assessment_session = AssessmentSession.query.filter_by(session_id=session_id).first()
+        assessment_session = AssessmentSession.query.filter_by(
+            session_id=session_id).first()
         if not assessment_session:
             return jsonify({'error': 'Session not found'}), 404
 

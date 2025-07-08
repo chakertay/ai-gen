@@ -13,10 +13,8 @@ from pydantic import BaseModel
 # This API key is from Gemini Developer API Key, not vertex AI API Key
 # Initialize client only if API key is available
 gemini_api_key = os.environ.get("GEMINI_API_KEY")
-if gemini_api_key:
-    client = genai.Client(api_key=gemini_api_key)
-else:
-    client = None
+client = genai.Client(api_key=gemini_api_key)
+
 
 class CVAnalysis(BaseModel):
     summary: str
@@ -25,6 +23,7 @@ class CVAnalysis(BaseModel):
     career_stage: str
     notable_achievements: list
     potential_areas_for_growth: list
+
 
 def analyze_cv_content(cv_text: str) -> dict:
     """
@@ -47,7 +46,7 @@ def analyze_cv_content(cv_text: str) -> dict:
         5. Réalisations et accomplissements notables
         6. Domaines potentiels de développement professionnel
 
-        Retournez votre analyse au format JSON avec les champs suivants :
+        Retournez votre analyse au format valid JSON avec les champs suivants :
         - summary : Un résumé professionnel concis
         - key_skills : Liste des compétences principales
         - experience_years : Années d'expérience estimées
@@ -59,7 +58,9 @@ def analyze_cv_content(cv_text: str) -> dict:
         response = client.models.generate_content(
             model="gemini-2.5-pro",
             contents=[
-                types.Content(role="user", parts=[types.Part(text=f"Contenu du CV :\n\n{cv_text}")])
+                types.Content(
+                    role="user",
+                    parts=[types.Part(text=f"Contenu du CV :\n\n{cv_text}")])
             ],
             config=types.GenerateContentConfig(
                 system_instruction=system_prompt,
@@ -76,6 +77,7 @@ def analyze_cv_content(cv_text: str) -> dict:
     except Exception as e:
         logging.error(f"Erreur lors de l'analyse du CV avec Gemini : {str(e)}")
         raise Exception(f"Échec de l'analyse du CV : {str(e)}")
+
 
 def generate_first_question(cv_analysis: dict) -> str:
     """
@@ -102,16 +104,17 @@ def generate_first_question(cv_analysis: dict) -> str:
         Retournez uniquement le texte de la question, sans mise en forme supplémentaire.
         """
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
+        response = client.models.generate_content(model="gemini-2.5-flash",
+                                                  contents=prompt)
 
-        return response.text.strip() if response.text else "Parlez-moi de vos objectifs professionnels et de ce qui vous motive dans votre travail."
+        return response.text.strip(
+        ) if response.text else "Parlez-moi de vos objectifs professionnels et de ce qui vous motive dans votre travail."
 
     except Exception as e:
-        logging.error(f"Erreur lors de la génération de la première question : {str(e)}")
+        logging.error(
+            f"Erreur lors de la génération de la première question : {str(e)}")
         return "J’aimerais mieux comprendre votre parcours professionnel. Quels sont vos objectifs actuels et ce qui vous motive dans votre travail ?"
+
 
 def generate_followup_question(cv_analysis: dict, previous_qa: list) -> str:
     """
@@ -119,13 +122,14 @@ def generate_followup_question(cv_analysis: dict, previous_qa: list) -> str:
     """
     try:
         if not client:
-            return "Quels défis avez-vous rencontrés dans votre carrière, et comment les avez-vous surmontés ?"
+            return "Quels défis avez-vous rencontrés dans votre carrière, et comment les avez-vous surmontés asba ?"
 
         # Prepare context from previous Q&A - take last Q&A pairs
-        recent_qa = previous_qa[len(previous_qa)-1] 
-        qa_context = "\n".join(f"Q : {recent_qa['question']}\nR : {recent_qa['answer']}")
+        recent_qa = previous_qa[len(previous_qa) - 1]
+        qa_context = "\n".join(
+            f"Q : {recent_qa['question']}\nR : {recent_qa['answer']}")
 
-        prompt = f"""Vous menez un entretien d'évaluation professionnelle. En vous basant sur l'analyse du CV et les échanges précédents, générez la prochaine question pertinente.
+        prompt = f"""Vous menez un entretien d'évaluation professionnelle. En vous basant sur l'analyse du CV et les échanges précédents, générez la prochaine question pertinente dans une phrase.
 
 Analyse du CV :
 Résumé : {cv_analysis.get('summary', '')}
@@ -151,20 +155,20 @@ Retournez uniquement le texte de la question, sans mise en forme supplémentaire
                 types.Content(role="user", parts=[types.Part(text=prompt)])
             ],
             config=types.GenerateContentConfig(
-                system_instruction="Vous êtes un expert en entretiens professionnels. Générez une question claire et engageante.",
-                temperature=0.7,
-                max_output_tokens=200
-            )
-        )
-
+                system_instruction=
+                "Vous êtes un expert en entretiens professionnels. Générez une question claire et engageante.",
+                temperature=0.7))
+        logging.info(f"Gemini response: {response}")
         if response.text and response.text.strip():
             return response.text.strip()
         else:
             raise ValueError("Réponse vide de Gemini")
 
     except Exception as e:
-        logging.error(f"Erreur lors de la génération de la question de suivi : {str(e)}")
+        logging.error(
+            f"Erreur lors de la génération de la question de suivi : {str(e)}")
         return "Quels défis avez-vous rencontrés dans votre carrière, et comment les avez-vous surmontés ?"
+
 
 def generate_final_summary(cv_analysis: dict, qa_pairs: list) -> str:
     """
@@ -174,7 +178,8 @@ def generate_final_summary(cv_analysis: dict, qa_pairs: list) -> str:
         if not client:
             return "Évaluation professionnelle terminée. Configuration de l'API requise pour un résumé détaillé généré par l'IA."
 
-        qa_text = "\n".join([f"Q : {qa['question']}\nR : {qa['answer']}" for qa in qa_pairs])
+        qa_text = "\n".join(
+            [f"Q : {qa['question']}\nR : {qa['answer']}" for qa in qa_pairs])
 
         prompt = f"""En tant que consultant professionnel en carrière, créez un rapport d'évaluation complet basé sur les éléments suivants :
 
@@ -196,22 +201,21 @@ Créez un rapport d'évaluation professionnel détaillé qui inclut :
 Basez le rapport sur les réponses fournies et le contenu du CV. Soyez précis et donnez des recommandations actionnables. Rédigez en français et de manière professionnelle."""
 
         response = client.models.generate_content(
-            model="gemini-2.5-pro",
+            model="gemini-2.5-flash",
             contents=[
                 types.Content(role="user", parts=[types.Part(text=prompt)])
             ],
             config=types.GenerateContentConfig(
-                system_instruction="Vous êtes un consultant expert en développement professionnel. Créez un rapport d'évaluation complet et structuré.",
-                temperature=0.3,
-                max_output_tokens=2000
-            )
-        )
-
+                system_instruction=
+                "Vous êtes un consultant expert en développement professionnel. Créez un rapport d'évaluation complet et structuré.",
+                temperature=0.3))
+        logging.info(f"Gemini response: {response}")
         if response.text and response.text.strip():
             return response.text.strip()
         else:
             raise ValueError("Réponse vide de Gemini")
 
     except Exception as e:
-        logging.error(f"Erreur lors de la génération du résumé final : {str(e)}")
+        logging.error(
+            f"Erreur lors de la génération du résumé final : {str(e)}")
         return "Erreur lors de la génération du résumé de l'évaluation. Veuillez réessayer."

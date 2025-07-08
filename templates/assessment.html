@@ -1,29 +1,42 @@
-{% extends "base.html" %}
-
-{% block title %}Assessment - AI Professional Assessment{% endblock %}
-
-{% block head %}
+{% extends "base.html" %} {% block title %}Assessment - AI Professional
+Assessment{% endblock %} {% block head %}
 <style>
     .recording-indicator {
         display: none;
         animation: pulse 2s infinite;
     }
-    
+
     @keyframes pulse {
-        0% { opacity: 0.5; }
-        50% { opacity: 1; }
-        100% { opacity: 0.5; }
+        0% {
+            opacity: 0.5;
+        }
+        50% {
+            opacity: 1;
+        }
+        100% {
+            opacity: 0.5;
+        }
     }
-    
+
     @keyframes talk {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+        100% {
+            transform: scale(1);
+        }
     }
 
     @keyframes listen {
-        0% { opacity: 0.5; }
-        100% { opacity: 1; }
+        0% {
+            opacity: 0.5;
+        }
+        100% {
+            opacity: 1;
+        }
     }
 
     #avatar.talking {
@@ -38,7 +51,7 @@
         max-width: 400px;
         margin: 0 auto;
     }
-    
+
     .progress-step {
         width: 35px;
         height: 35px;
@@ -52,28 +65,18 @@
         font-weight: bold;
         font-size: 14px;
     }
-    
+
     .progress-step.active {
         background: var(--bs-primary);
     }
-    
+
     .progress-step.completed {
         background: var(--bs-success);
     }
 </style>
-{% endblock %}
-
-{% block content %}
+{% endblock %} {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-10 col-lg-8">
-        <!-- Avatar Display -->
-        <div id="avatar-container" class="text-center mb-4">
-            <video id="avatar" width="100" style="display: none;" muted loop>
-                <source src="../images/avatar.webm" type="video/webm">
-                Your browser does not support the video tag.
-            </video>
-        </div>
-
         <!-- Progress Indicator -->
         <div class="card mb-4">
             <div class="card-body">
@@ -89,9 +92,26 @@
                     <div class="progress-step" id="step8">8</div>
                 </div>
                 <div class="text-center mt-2">
-                    <small class="text-muted">Question <span id="current-question">1</span> sur 8</small>
+                    <small class="text-muted"
+                        >Question <span id="current-question">1</span> sur
+                        8</small
+                    >
                 </div>
             </div>
+        </div>
+
+        <!-- Avatar Display -->
+        <div
+            id="avatar-container"
+            class="flex justify-center items-center text-center mb-4"
+        >
+            <video id="avatar" width="100" style="display: none" muted loop>
+                <source
+                    src="https://ouch-prod-src-cdn.icons8.com/xl/videos/JbSg5v2Ar6AGH5L5.webm"
+                    type="video/webm"
+                />
+                Your browser does not support the video tag.
+            </video>
         </div>
 
         <!-- Loading Screen -->
@@ -101,12 +121,15 @@
                     <span class="visually-hidden">Loading...</span>
                 </div>
                 <h5>Analyse de votre CV...</h5>
-                <p class="text-muted">Veuillez patienter pendant que nous analysons votre parcours professionnel et préparons votre évaluation personnalisée.</p>
+                <p class="text-muted">
+                    Veuillez patienter pendant que nous analysons votre parcours
+                    professionnel et préparons votre évaluation personnalisée.
+                </p>
             </div>
         </div>
 
         <!-- Main Assessment Interface -->
-        <div class="card" id="assessment-interface" style="display: none;">
+        <div class="card" id="assessment-interface" style="display: none">
             <div class="card-header">
                 <h4 class="mb-0">
                     <i class="fas fa-comments me-2"></i>
@@ -118,32 +141,48 @@
                 <div class="mb-4">
                     <h5>Assistant IA :</h5>
                     <div class="bg-light p-3 rounded" id="question-display">
-                        <p id="current-question-text" class="mb-0">Chargement de la question...</p>
+                        <p id="current-question-text" class="mb-0">
+                            Chargement de la question...
+                        </p>
                     </div>
                 </div>
 
                 <!-- Audio Controls -->
                 <div class="audio-controls mb-4">
-                    <div class="d-flex justify-content-center align-items-center gap-3">
+                    <div
+                        class="d-flex justify-content-center align-items-center gap-3"
+                    >
                         <button class="btn btn-primary" id="play-question-btn">
                             <i class="fas fa-play me-2"></i>Écouter la Question
                         </button>
                         <button class="btn btn-danger" id="record-btn">
-                            <i class="fas fa-microphone me-2"></i>Enregistrer Réponse
+                            <i class="fas fa-microphone me-2"></i>Enregistrer
+                            Réponse
                         </button>
-                        <button class="btn btn-success" id="submit-btn" style="display: none;">
-                            <i class="fas fa-paper-plane me-2"></i>Soumettre Réponse
+                        <button
+                            class="btn btn-success"
+                            id="submit-btn"
+                            style="display: none"
+                        >
+                            <i class="fas fa-paper-plane me-2"></i>Soumettre
+                            Réponse
                         </button>
                     </div>
-                    
-                    <div class="recording-indicator text-center mt-3" id="recording-indicator">
+
+                    <div
+                        class="recording-indicator text-center mt-3"
+                        id="recording-indicator"
+                    >
                         <i class="fas fa-circle text-danger me-2"></i>
-                        <span>Enregistrement... Cliquez sur Arrêter quand terminé</span>
+                        <span
+                            >Enregistrement... Cliquez sur Arrêter quand
+                            terminé</span
+                        >
                     </div>
                 </div>
 
                 <!-- Answer Display -->
-                <div class="mb-4" id="answer-section" style="display: none;">
+                <div class="mb-4" id="answer-section">
                     <h5>Your Answer:</h5>
                     <div class="bg-light p-3 rounded">
                         <p id="transcribed-text" class="mb-0"></p>
@@ -151,21 +190,31 @@
                 </div>
 
                 <!-- Audio Elements -->
-                <audio id="question-audio" controls style="display: none;"></audio>
+                <audio
+                    id="question-audio"
+                    controls
+                    style="display: none"
+                ></audio>
             </div>
         </div>
 
         <!-- Completion Screen -->
-        <div class="card" id="completion-screen" style="display: none;">
+        <div class="card" id="completion-screen" style="display: none">
             <div class="card-body text-center py-5">
                 <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
                 <h3>Assessment Complete!</h3>
-                <p class="text-muted mb-4">Thank you for completing the assessment. We're now generating your personalized professional report.</p>
+                <p class="text-muted mb-4">
+                    Thank you for completing the assessment. We're now
+                    generating your personalized professional report.
+                </p>
                 <div class="d-flex justify-content-center gap-3">
                     <button class="btn btn-primary" id="generate-report-btn">
                         <i class="fas fa-file-pdf me-2"></i>Generate Report
                     </button>
-                    <a href="{{ url_for('main.new_assessment') }}" class="btn btn-secondary">
+                    <a
+                        href="{{ url_for('main.new_assessment') }}"
+                        class="btn btn-secondary"
+                    >
                         <i class="fas fa-plus me-2"></i>New Assessment
                     </a>
                 </div>
@@ -175,18 +224,16 @@
 </div>
 
 <!-- Hidden form for file uploads -->
-<form id="audio-form" style="display: none;">
-    <input type="file" id="audio-file-input" accept="audio/*">
+<form id="audio-form" style="display: none">
+    <input type="file" id="audio-file-input" accept="audio/*" />
 </form>
-{% endblock %}
-
-{% block scripts %}
+{% endblock %} {% block scripts %}
 <script src="{{ url_for('static', filename='js/speech-recognition.js') }}"></script>
 <script src="{{ url_for('static', filename='js/audio-recorder.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
     // Initialize assessment when page loads
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener("DOMContentLoaded", function () {
         initializeAssessment();
     });
 </script>

@@ -55,6 +55,7 @@ def upload_cv():
             cv_filename=filename,
             cv_content=cv_content,
             status='started'
+            
         )
 
         db.session.add(assessment_session)
