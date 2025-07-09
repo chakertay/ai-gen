@@ -19,13 +19,13 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                <i class="fas fa-brain me-2"></i>AI Professional Assessment
+                <i class="fas fa-brain me-2"></i>SIRA - EMPLOI
             </a>
             
             <div class="navbar-nav ms-auto">
                 {% if session.get('assessment_session_id') %}
                     <a class="nav-link" href="{{ url_for('main.new_assessment') }}">
-                        <i class="fas fa-plus me-1"></i>New Assessment
+                        <i class="fas fa-plus me-1"></i>Nouvelle évaluation 
                     </a>
                 {% endif %}
             </div>
@@ -54,7 +54,7 @@
     <!-- Footer -->
     <footer class="bg-dark text-light py-4 mt-5">
         <div class="container text-center">
-            <p>&copy; 2025 AI Professional Assessment. Powered by Gemini AI, ElevenLabs, and OpenAI.</p>
+            <p>&copy; 2025 SIRA - EMPLOI</p>
         </div>
     </footer>
 
