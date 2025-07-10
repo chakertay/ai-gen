@@ -18,35 +18,6 @@ Assessment{% endblock %} {% block head %}
         }
     }
 
-    @keyframes talk {
-        0% {
-            transform: scale(1);
-        }
-        50% {
-            transform: scale(1.1);
-        }
-        100% {
-            transform: scale(1);
-        }
-    }
-
-    @keyframes listen {
-        0% {
-            opacity: 0.5;
-        }
-        100% {
-            opacity: 1;
-        }
-    }
-
-    #avatar.talking {
-        animation: talk 1s infinite;
-    }
-
-    #avatar.listening {
-        animation: listen 2s infinite ease-in-out;
-    }
-
     .audio-controls {
         max-width: 400px;
         margin: 0 auto;
@@ -72,6 +43,70 @@ Assessment{% endblock %} {% block head %}
 
     .progress-step.completed {
         background: var(--bs-success);
+    }
+
+    #avatar-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        margin-bottom: 2rem;
+        min-height: 200px;
+    }
+
+    .avatar {
+        border-radius: 50%;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: opacity 0.3s ease;
+        width: 200px;
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .avatar.hidden {
+        display: none;
+    }
+
+    .processing-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.95);
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        border-radius: 0.375rem;
+    }
+
+    .processing-overlay.show {
+        display: flex;
+    }
+
+    .processing-text {
+        margin-top: 1rem;
+        font-size: 1.1rem;
+        color: #6c757d;
+    }
+
+    #assessment-interface {
+        position: relative;
+    }
+
+    /* Hide avatar container when loading or completion screens are visible */
+    #loading-screen:not([style*="display: none"]) ~ * #avatar-container,
+    #completion-screen:not([style*="display: none"]) ~ * #avatar-container {
+        display: none;
+    }
+
+    /* Alternative approach using body classes for better control */
+    .loading-state #avatar-container,
+    .completion-state #avatar-container,
+    .processing-state #avatar-container {
+        display: none;
     }
 </style>
 {% endblock %} {% block content %}
@@ -101,137 +136,190 @@ Assessment{% endblock %} {% block head %}
         </div>
 
         <!-- Avatar Display -->
-        <div
-            id="avatar-container"
-            class="flex justify-center items-center text-center mb-4"
-        >
-            <video id="avatar" width="100" style="display: none" muted loop>
-                <source
-                    src="https://ouch-prod-src-cdn.icons8.com/xl/videos/JbSg5v2Ar6AGH5L5.webm"
-                    type="video/webm"
-                />
-                Your browser does not support the video tag.
-            </video>
+        <div id="avatar-container">
+            <img
+                id="avatar-speaking"
+                class="avatar hidden"
+                src="{{ url_for('static', filename='images/robot-speaking-unscreen.gif') }}"
+                alt="AI Speaking Avatar"
+            />
+            <img
+                id="avatar-listening"
+                class="avatar hidden"
+                src="{{ url_for('static', filename='images/robot-listening-unscreen.gif') }}"
+                alt="AI Listening Avatar"
+            />
         </div>
 
         <!-- Loading Screen -->
         <div class="card" id="loading-screen">
             <div class="card-body text-center py-5">
                 <div class="spinner-border text-primary mb-3" role="status">
-                    <span class="visually-hidden">Chargement ...</span>
+                    <span class="visually-hidden">Chargement...</span>
                 </div>
-                <h5>Analyse de votre CV...</h5>
-                <p class="text-muted">
-                    Veuillez patienter pendant que nous analysons votre parcours
-                    professionnel et préparons votre évaluation personnalisée.
-                </p>
+                    <div class="mb-4">
+                        <img
+                            src="{{ url_for('static', filename='images/robot-thinking-unscreen.gif') }}"
+                            alt="AI Thinking Avatar"
+                            style="
+                                width: 150px;
+                                height: 150px;
+                                border-radius: 50%;
+                                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                            "
+                        />
+                    </div>
+                    <h5>Analyse de votre CV...</h5>
+                    <p class="text-muted">
+                        Veuillez patienter pendant que nous analysons votre parcours
+                        professionnel et préparons votre évaluation personnalisée.
+                    </p>
+                </div>
             </div>
-        </div>
 
-        <!-- Main Assessment Interface -->
-        <div class="card" id="assessment-interface" style="display: none">
-            <div class="card-header">
-                <h4 class="mb-0">
-                    <i class="fas fa-comments me-2"></i>
+            <!-- Main Assessment Interface -->
+            <div class="card" id="assessment-interface" style="display: none">
+                <!-- Processing Overlay -->
+                <div class="processing-overlay" id="processing-overlay">
+                    <div
+                        class="spinner-border text-primary"
+                        role="status"
+                        style="width: 3rem; height: 3rem"
+                    >
+                        <span class="visually-hidden">Processing...</span>
+                    </div>
+                    <div class="processing-text">
+                        Traitement de votre réponse...
+                    </div>
+                </div>
+
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-comments me-2"></i>
                     Entretien d'Évaluation Professionnelle
-                </h4>
-            </div>
-            <div class="card-body">
-                <!-- Question Display -->
-                <div class="mb-4">
-                    <h5>Assistant IA :</h5>
-                    <div class="bg-light p-3 rounded" id="question-display">
-                        <p id="current-question-text" class="mb-0">
-                            Chargement de la question...
-                        </p>
-                    </div>
+                    </h4>
                 </div>
+                <div class="card-body">
+                    <!-- Question Display -->
+                    <div class="mb-4">
+                        <h5>Assistant IA :</h5>
+                        <div class="bg-light p-3 rounded" id="question-display">
+                            <p id="current-question-text" class="mb-0">
+                                Chargement de la question...
+                            </p>
+                        </div>
+                    </div>
 
-                <!-- Audio Controls -->
-                <div class="audio-controls mb-4">
-                    <div
-                        class="d-flex justify-content-center align-items-center gap-3"
-                    >
-                        <button class="btn btn-primary" id="play-question-btn">
-                            <i class="fas fa-play me-2"></i>Écouter la Question
-                        </button>
-                        <button class="btn btn-danger" id="record-btn">
-                            <i class="fas fa-microphone me-2"></i>Enregistrer
-                            Réponse
-                        </button>
+                    <!-- Audio Controls -->
+                    <div class="audio-controls mb-4">
+                        <div
+                            class="d-flex justify-content-center align-items-center gap-3"
+                        >
+                            <button
+                                class="btn btn-primary"
+                                id="play-question-btn"
+                            >
+                                <i class="fas fa-play me-2"></i>Écouter la
+                                Question
+                            </button>
+                            <button class="btn btn-danger" id="record-btn">
+                                <i class="fas fa-microphone me-2"></i
+                                >Enregistrer Réponse
+                            </button>
+                            <button
+                                class="btn btn-success"
+                                id="submit-btn"
+                                style="display: none"
+                            >
+                                <i class="fas fa-paper-plane me-2"></i>Soumettre
+                                Réponse
+                            </button>
+                        </div>
+
+                        <div
+                            class="recording-indicator text-center mt-3"
+                            id="recording-indicator"
+                        >
+                            <i class="fas fa-circle text-danger me-2"></i>
+                            <span
+                                >Enregistrement... Cliquez sur Arrêter quand
+                                terminé</span
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Answer Display -->
+                    <div class="mb-4" id="answer-section">
+                        <h5>Réponse:</h5>
+                        <div class="bg-light p-3 rounded">
+                            <p
+                                id="transcribed-text"
+                                class="mb-0 text-black"
+                            ></p>
+                        </div>
+                    </div>
+
+                    <!-- Audio Elements -->
+                    <audio
+                        id="question-audio"
+                        controls
+                        style="display: none"
+                    ></audio>
+                </div>
+            </div>
+
+            <!-- Completion Screen -->
+            <div class="card" id="completion-screen" style="display: none">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                    <h3>Évaluation Complète!</h3>
+                    <div class="mb-4">
+                        <img
+                            src="{{ url_for('static', filename='images/robot-thinking-unscreen.gif') }}"
+                            alt="AI Thinking Avatar"
+                            style="
+                                width: 150px;
+                                height: 150px;
+                                border-radius: 50%;
+                                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                            "
+                        />
+                    </div>
+                    <p class="text-muted mb-4">
+                        Merci d'avoir complété l'évaluation. Nous sommes en train de générer votre rapport professionnel personnalisé
+                    </p>
+                    <div class="d-flex justify-content-center gap-3">
                         <button
-                            class="btn btn-success"
-                            id="submit-btn"
-                            style="display: none"
+                            class="btn btn-primary"
+                            id="generate-report-btn"
                         >
-                            <i class="fas fa-paper-plane me-2"></i>Soumettre
-                            Réponse
+                            <i class="fas fa-file-pdf me-2"></i>Générer Bilan
                         </button>
-                    </div>
-
-                    <div
-                        class="recording-indicator text-center mt-3"
-                        id="recording-indicator"
-                    >
-                        <i class="fas fa-circle text-danger me-2"></i>
-                        <span
-                            >Enregistrement... Cliquez sur Arrêter quand
-                            terminé</span
+                        <a
+                            href="{{ url_for('main.new_assessment') }}"
+                            class="btn btn-secondary"
                         >
+                            <i class="fas fa-plus me-2"></i>Nouvelle Évaluation
+                        </a>
                     </div>
-                </div>
-
-                <!-- Answer Display -->
-                <div class="mb-4" id="answer-section">
-                    <h5>Réponse:</h5>
-                    <div class="bg-dark p-3 rounded">
-                        <p id="transcribed-text" class="mb-0"></p>
-                    </div>
-                </div>
-
-                <!-- Audio Elements -->
-                <audio
-                    id="question-audio"
-                    controls
-                    style="display: none"
-                ></audio>
-            </div>
-        </div>
-
-        <!-- Completion Screen -->
-        <div class="card" id="completion-screen" style="display: none">
-            <div class="card-body text-center py-5">
-                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
-                <h3>Assessment Complete!</h3>
-                <p class="text-muted mb-4">Merci d'avoir complété l'évaluation. Nous sommes en train de générer votre rapport professionnel personnalisé</p>
-                <div class="d-flex justify-content-center gap-3">
-                    <button class="btn btn-primary" id="generate-report-btn">
-                        <i class="fas fa-file-pdf me-2"></i>Générer Bilan 
-                    </button>
-                    <a
-                        href="{{ url_for('main.new_assessment') }}"
-                        class="btn btn-secondary"
-                    >
-                        <i class="fas fa-plus me-2"></i>Nouvelle Évaluation
-                    </a>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Hidden form for file uploads -->
-<form id="audio-form" style="display: none">
-    <input type="file" id="audio-file-input" accept="audio/*" />
-</form>
-{% endblock %} {% block scripts %}
-<script src="{{ url_for('static', filename='js/speech-recognition.js') }}"></script>
-<script src="{{ url_for('static', filename='js/audio-recorder.js') }}"></script>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
-<script>
-    // Initialize assessment when page loads
-    document.addEventListener("DOMContentLoaded", function () {
-        initializeAssessment();
-    });
-</script>
-{% endblock %}
+    <!-- Hidden form for file uploads -->
+    <form id="audio-form" style="display: none">
+        <input type="file" id="audio-file-input" accept="audio/*" />
+    </form>
+    {% endblock %} {% block scripts %}
+    <script src="{{ url_for('static', filename='js/speech-recognition.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/audio-recorder.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Initialize assessment when page loads
+        document.addEventListener("DOMContentLoaded", function () {
+            initializeAssessment();
+        });
+    </script>
+    {% endblock %}
+</div>
