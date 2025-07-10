@@ -25,7 +25,7 @@
                 <!-- Assessment Summary -->
                 <div class="mb-4">
                     <h5><i class="fas fa-user-tie me-2"></i>Assessment Overview</h5>
-                    <div class="bg-light p-3 rounded">
+                    <div class="bg-light p-3 rounded text-black">
                         <div class="row">
                             <div class="col-md-6">
                                 <p><strong>CV File:</strong> {{ assessment.cv_filename }}</p>
@@ -43,7 +43,7 @@
 
                 <!-- Key Insights -->
                 {% if assessment.cv_analysis %}
-                <div class="mb-4">
+                <div class="mb-4 text-black">
                     <h5><i class="fas fa-lightbulb me-2"></i>Key Insights</h5>
                     <div class="bg-light p-3 rounded">
                         {% set cv_data = assessment.cv_analysis|safe %}
